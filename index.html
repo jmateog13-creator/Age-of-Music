@@ -239,7 +239,7 @@
 
         const storeItems = {
             upgrades: [
-                { id: 'cost_reduction', name: 'Evolució Teòrica', description: 'Aprofundeix en el coneixement, fent que totes les innovacions siguin un 5% més barates (acumulatiu).', baseCost: 100, level: 0 },
+                { id: 'cost_reduction', name: 'Evolució Teòrica', description: 'Redueix el cost de les innovacions. El descompte augmenta amb cada nivell fins a un màxim del 10%.', baseCost: 100, level: 0 },
                 { id: 'influence_boost', name: 'Llegat dels Mestres', description: 'El teu treball es basa en gegants, augmentant la teva influència cultural un 10% per nivell.', baseCost: 150, level: 0 }
             ],
             consumables: [
@@ -315,9 +315,9 @@
                 gameRunning: true,
                 timeRemaining: 900,
                 upgrades: {
-                    energyPerSecond: 1,
+                    energyPerSecond: 3, // REBALANCED: Increased base energy generation
                     influenceMultiplier: 1,
-                    costReduction: 1,
+                    costReductionPercent: 0,
                     isFestivalActive: false
                 }
             };
@@ -537,7 +537,8 @@
         
         function showTooltip(event, nodeData) {
             const tooltip = document.getElementById('tooltip');
-            const finalCost = Math.ceil(nodeData.cost * gameState.upgrades.costReduction);
+            const discountMultiplier = 1 - (gameState.upgrades.costReductionPercent / 100);
+            const finalCost = Math.ceil(nodeData.cost * discountMultiplier);
             tooltip.innerHTML = `
                 <h3>${nodeData.nom}</h3>
                 <p>${descriptions[nodeData.id] || "Una innovació musical important."}</p>
@@ -609,7 +610,9 @@
                 gameState.energy -= cost;
                 item.level++;
                 if (item.id === 'cost_reduction') {
-                    gameState.upgrades.costReduction *= 0.95;
+                    // REBALANCED: New progressive discount logic
+                    const discountLevels = [0, 5, 6, 7, 8, 9, 10];
+                    gameState.upgrades.costReductionPercent = discountLevels[item.level] || 10;
                 } else if (item.id === 'influence_boost') {
                     gameState.upgrades.influenceMultiplier += 0.1;
                 }
@@ -662,7 +665,8 @@
         function researchNode(nodeId) {
             if (!gameState.gameRunning) return;
             const nodeData = arbreTecnologic.find(n => n.id === nodeId);
-            const finalCost = Math.ceil(nodeData.cost * gameState.upgrades.costReduction);
+            const discountMultiplier = 1 - (gameState.upgrades.costReductionPercent / 100);
+            const finalCost = Math.ceil(nodeData.cost * discountMultiplier);
 
             const isResearched = gameState.researchedNodes.has(nodeId);
             const prerequisiteResearched = nodeData.requisi === null || gameState.researchedNodes.has(nodeData.requisi);
